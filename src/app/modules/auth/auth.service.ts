@@ -6,7 +6,7 @@ import { jwtHelper } from "../../../helpers/jwtHelper";
 import config from "../../../config";
 import { responseMessage } from "../../../constants/message";
 import bcrypt from "bcrypt";
-import crypto from "crypto"; 
+import crypto from "crypto";
 import { EmailService } from "../../../shared/email";
 
 const createUser = async (payload: IUser): Promise<IUser | null> => {
@@ -15,8 +15,15 @@ const createUser = async (payload: IUser): Promise<IUser | null> => {
     payload.email_verification_token = emailVerificationToken;
 
     const user = await User.create(payload);
-    const verificationLink = `${config.domain}/verify-email?token=${emailVerificationToken}&email=${encodeURIComponent(payload.email)}`;
-    await EmailService.VerificationEmailService.sendVerificationEmail(payload.email, verificationLink);
+    const verificationLink = `${
+      config.domain
+    }/verify-email?token=${emailVerificationToken}&email=${encodeURIComponent(
+      payload.email
+    )}`;
+    await EmailService.VerificationEmailService.sendVerificationEmail(
+      payload.email,
+      verificationLink
+    );
 
     return user;
   } catch (error) {
@@ -31,13 +38,19 @@ const verifyEmail = async (email: string): Promise<IUser | null> => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, responseMessage.USER_NOT_EXIST);
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        responseMessage.USER_NOT_EXIST
+      );
     }
     user.is_active = true;
     const data = await user.save();
     return data;
   } catch (error) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, responseMessage.INTERNAL_SERVER_ERROR_MESSAGE);
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      responseMessage.INTERNAL_SERVER_ERROR_MESSAGE
+    );
   }
 };
 
@@ -45,6 +58,7 @@ const userLogin = async (payload: ILoginUser): Promise<string> => {
   const { email, password } = payload;
   try {
     const isExist = await User.findOne({ email });
+    
     if (!isExist) {
       throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
@@ -52,12 +66,12 @@ const userLogin = async (payload: ILoginUser): Promise<string> => {
       );
     }
 
-      if (isExist.is_active!) {
-        throw new ApiError(
-          httpStatus.FORBIDDEN,
-          responseMessage.EMAIL_NOT_VERIFIED
-        );
-      }
+    if (!isExist?.is_active!) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        responseMessage.EMAIL_NOT_VERIFIED
+      );
+    }
 
     const user = await User.findOne({ email }).select("+password");
     const isPasswordMatch = await user?.isPasswordMatched(
@@ -101,7 +115,11 @@ const forgetPassword = async (email: string) => {
     const encodedEmail = encodeURIComponent(isUserExist.email);
     const encodedName = encodeURIComponent(isUserExist.name);
     const link = `${config.domain}/reset-password?token=${token}&userId=${isUserExist._id}&email=${encodedEmail}&name=${encodedName}`;
-    const mailResult = await EmailService.ResetPasswordEmailService.sendResetPasswordLink(email, link);
+    const mailResult =
+      await EmailService.ResetPasswordEmailService.sendResetPasswordLink(
+        email,
+        link
+      );
     return { user: isUserExist, messageId: mailResult.messageId };
   } catch (error) {
     throw new Error(responseMessage.INTERNAL_SERVER_ERROR_MESSAGE);
@@ -149,5 +167,5 @@ export const AuthService = {
   changePassword,
   resetPassword,
   forgetPassword,
-  verifyEmail
+  verifyEmail,
 };

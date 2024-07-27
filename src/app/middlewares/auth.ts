@@ -32,8 +32,6 @@ export const auth =
     }
   };
 
- 
-
 export const verifyJwt = (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log({ Cookies: req.cookies });
